@@ -39,8 +39,8 @@ function AuthPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email address");
-    if (mode !== "forgot" && password.length < 8) return toast.error("Password must be at least 8 characters");
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast.error("Enter a valid email address"); return; }
+    if (mode !== "forgot" && password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     setBusy(true);
     try {
       if (mode === "in") {
@@ -65,7 +65,7 @@ function AuthPage() {
 
   async function google() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
-    if (r.error) return toast.error(r.error.message ?? "Google sign-in failed");
+    if (r.error) { toast.error(r.error.message ?? "Google sign-in failed"); return; }
     if (r.redirected) return;
     navigate({ to: "/dashboard" });
   }

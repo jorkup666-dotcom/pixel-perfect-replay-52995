@@ -27,7 +27,7 @@ const fromTrade = (t: Trade): TradeFormValues => ({
   setup_type: t.setup_type, timeframe: t.timeframe, notes: t.notes ?? "", ict_concepts: t.ict_concepts ?? [],
 });
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
+function Field({ id, label, error, children }: { id: string; label: string; error?: string | undefined; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
@@ -115,10 +115,10 @@ export function TradeFormDialog({ open, onOpenChange, trade }: { open: boolean; 
           <DialogDescription>Record what actually happened. Results are entered in R multiples.</DialogDescription>
         </DialogHeader>
         <form className="grid grid-cols-2 gap-4 md:grid-cols-3" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-          <Field id="trade_date" error={errors.trade_date} label="Date"><Input id="trade_date" type="date" value={v.trade_date} onChange={(e) => set("trade_date", e.target.value)} /></Field>
-          <Field id="instrument" error={errors.instrument} label="Instrument"><Input id="instrument" placeholder="e.g. NQ, EURUSD" value={v.instrument} onChange={(e) => set("instrument", e.target.value)} /></Field>
-          <Field id="session" error={errors.session} label="Session">{sel("session", SESSIONS)}</Field>
-          <Field id="direction" error={errors.direction} label="Direction">
+          <Field id="trade_date" error={errors["trade_date"]} label="Date"><Input id="trade_date" type="date" value={v.trade_date} onChange={(e) => set("trade_date", e.target.value)} /></Field>
+          <Field id="instrument" error={errors["instrument"]} label="Instrument"><Input id="instrument" placeholder="e.g. NQ, EURUSD" value={v.instrument} onChange={(e) => set("instrument", e.target.value)} /></Field>
+          <Field id="session" error={errors["session"]} label="Session">{sel("session", SESSIONS)}</Field>
+          <Field id="direction" error={errors["direction"]} label="Direction">
             <div className="grid grid-cols-2 gap-1 rounded-md border p-1">
               {(["long", "short"] as const).map((d) => (
                 <button type="button" key={d} onClick={() => set("direction", d)}
@@ -127,13 +127,13 @@ export function TradeFormDialog({ open, onOpenChange, trade }: { open: boolean; 
               ))}
             </div>
           </Field>
-          <Field id="setup_type" error={errors.setup_type} label="Setup type">{sel("setup_type", SETUP_TYPES)}</Field>
-          <Field id="timeframe" error={errors.timeframe} label="Timeframe">{sel("timeframe", TIMEFRAMES)}</Field>
-          <Field id="entry" error={errors.entry} label="Entry"><Input id="entry" inputMode="decimal" value={v.entry} onChange={(e) => set("entry", e.target.value)} /></Field>
-          <Field id="stop_loss" error={errors.stop_loss} label="Stop loss"><Input id="stop_loss" inputMode="decimal" value={v.stop_loss} onChange={(e) => set("stop_loss", e.target.value)} /></Field>
-          <Field id="take_profit" error={errors.take_profit} label="Take profit (optional)"><Input id="take_profit" inputMode="decimal" value={v.take_profit} onChange={(e) => set("take_profit", e.target.value)} /></Field>
-          <Field id="exit_price" error={errors.exit_price} label="Exit (optional)"><Input id="exit_price" inputMode="decimal" value={v.exit_price} onChange={(e) => set("exit_price", e.target.value)} /></Field>
-          <Field id="result_r" error={errors.result_r} label="Result (R)">
+          <Field id="setup_type" error={errors["setup_type"]} label="Setup type">{sel("setup_type", SETUP_TYPES)}</Field>
+          <Field id="timeframe" error={errors["timeframe"]} label="Timeframe">{sel("timeframe", TIMEFRAMES)}</Field>
+          <Field id="entry" error={errors["entry"]} label="Entry"><Input id="entry" inputMode="decimal" value={v.entry} onChange={(e) => set("entry", e.target.value)} /></Field>
+          <Field id="stop_loss" error={errors["stop_loss"]} label="Stop loss"><Input id="stop_loss" inputMode="decimal" value={v.stop_loss} onChange={(e) => set("stop_loss", e.target.value)} /></Field>
+          <Field id="take_profit" error={errors["take_profit"]} label="Take profit (optional)"><Input id="take_profit" inputMode="decimal" value={v.take_profit} onChange={(e) => set("take_profit", e.target.value)} /></Field>
+          <Field id="exit_price" error={errors["exit_price"]} label="Exit (optional)"><Input id="exit_price" inputMode="decimal" value={v.exit_price} onChange={(e) => set("exit_price", e.target.value)} /></Field>
+          <Field id="result_r" error={errors["result_r"]} label="Result (R)">
             <Input id="result_r" inputMode="decimal" placeholder="e.g. 2 or -1" value={v.result_r} onChange={(e) => set("result_r", e.target.value)} />
             {suggestedR != null && String(suggestedR) !== v.result_r && (
               <button type="button" className="text-xs text-cyan hover:underline" onClick={() => set("result_r", String(suggestedR))}>
@@ -141,7 +141,7 @@ export function TradeFormDialog({ open, onOpenChange, trade }: { open: boolean; 
               </button>
             )}
           </Field>
-          <Field id="screenshot" error={errors.screenshot} label="Screenshot">
+          <Field id="screenshot" error={errors["screenshot"]} label="Screenshot">
             <Input id="screenshot" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             {trade?.screenshot_path && !file && (
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -166,7 +166,7 @@ export function TradeFormDialog({ open, onOpenChange, trade }: { open: boolean; 
             </div>
           </div>
           <div className="col-span-full">
-            <Field id="notes" error={errors.notes} label="Notes"><Textarea id="notes" rows={4} placeholder="Context, execution, emotions, lessons…" value={v.notes} onChange={(e) => set("notes", e.target.value)} /></Field>
+            <Field id="notes" error={errors["notes"]} label="Notes"><Textarea id="notes" rows={4} placeholder="Context, execution, emotions, lessons…" value={v.notes} onChange={(e) => set("notes", e.target.value)} /></Field>
           </div>
           <DialogFooter className="col-span-full">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
