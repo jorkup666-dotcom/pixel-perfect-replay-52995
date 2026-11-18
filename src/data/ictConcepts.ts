@@ -1,0 +1,250 @@
+export type Pattern = "gap" | "sweep" | "structure" | "block" | "range" | "ote" | "po3";
+
+export interface IctConcept {
+  id: string;
+  name: string;
+  abbr: string;
+  short: string;
+  explanation: string;
+  spot: string[];
+  bullish: string;
+  bearish: string;
+  mistakes: string[];
+  related: string[];
+  strategies: string[];
+  pattern: Pattern;
+  symbol: string;
+}
+
+export const ICT_CONCEPTS: IctConcept[] = [
+  {
+    id: "fvg", name: "Fair Value Gap", abbr: "FVG", pattern: "gap", symbol: "CME_MINI:NQ1!",
+    short: "A three-candle gap where price moved so fast that the wicks of candle one and three don't overlap.",
+    explanation: "When one candle moves hard, the wick of the candle before it and the wick of the candle after it leave a range that was only traded in one direction. Price often comes back to fill part of that range before continuing. Traders use it as an entry zone, not as a reason to trade on its own.",
+    spot: ["Find a strong candle with a large body.", "Mark the high of the candle before it and the low of the candle after it (bullish), or the reverse (bearish).", "If those two don't overlap, the space between is the FVG.", "Wait for price to come back into it, ideally in line with your bias."],
+    bullish: "Price displaces up; candle 1's high sits below candle 3's low. A pullback into that gap is a possible long entry.",
+    bearish: "Price displaces down; candle 1's low sits above candle 3's high. A rally into that gap is a possible short entry.",
+    mistakes: ["Trading every gap regardless of higher-timeframe bias.", "Ignoring gaps that were already filled.", "Using tiny gaps on the 1m chart during low volume."],
+    related: ["displacement", "ifvg", "bpr", "order-block"], strategies: ["silver-bullet", "ote"],
+  },
+  {
+    id: "order-block", name: "Order Block", abbr: "OB", pattern: "block", symbol: "FX:EURUSD",
+    short: "The last opposite-coloured candle before a strong move that breaks structure.",
+    explanation: "Before a big move, the last down candle (for a move up) or last up candle (for a move down) shows where larger orders came in. When price returns to that candle, it can react again. An order block only counts if the move away from it was strong and broke structure.",
+    spot: ["Find a displacement move that broke a swing high or low.", "Go back to the last opposite candle before the move started.", "Mark its body or full range.", "Look for price to return to it with your bias."],
+    bullish: "Last down candle before a rally that takes out a swing high. Price returns to its body and holds.",
+    bearish: "Last up candle before a drop that takes out a swing low. Price returns to its body and rejects.",
+    mistakes: ["Marking any candle before any move.", "No break of structure after the block.", "Expecting the block to hold forever after several touches."],
+    related: ["breaker-block", "mitigation-block", "rejection-block", "bos"], strategies: ["ote"],
+  },
+  {
+    id: "breaker-block", name: "Breaker Block", abbr: "BB", pattern: "block", symbol: "CME_MINI:ES1!",
+    short: "A failed order block that price broke through, which then acts from the other side.",
+    explanation: "When an order block fails and price closes through it after taking liquidity, that block often flips role. A bullish order block that fails can become resistance, and the other way around. The best breakers form after a liquidity sweep.",
+    spot: ["Find a swing that took liquidity (a sweep).", "Mark the order block that should have held but was broken.", "Wait for price to come back to that block from the other side."],
+    bullish: "Price sweeps a low, breaks the last swing high, and the failed bearish block above becomes support.",
+    bearish: "Price sweeps a high, breaks the last swing low, and the failed bullish block below becomes resistance.",
+    mistakes: ["Calling every broken block a breaker without a sweep first.", "Entering before price returns to the block."],
+    related: ["order-block", "mitigation-block", "liquidity-sweep", "mss"], strategies: [],
+  },
+  {
+    id: "mitigation-block", name: "Mitigation Block", abbr: "MB", pattern: "block", symbol: "FX:GBPUSD",
+    short: "Like a breaker, but formed when price fails to make a new high or low before breaking structure.",
+    explanation: "A mitigation block forms when price makes a lower high (or higher low) and then breaks structure, without sweeping liquidity first. The failed swing's block becomes the area where trapped traders exit, which can push price further.",
+    spot: ["Look for a failure swing: no new high or low.", "Price then breaks the opposite swing.", "Mark the block of the failure swing and wait for a retest."],
+    bullish: "Higher low forms, price breaks above, retest of the old down-candle block holds.",
+    bearish: "Lower high forms, price breaks below, retest of the old up-candle block rejects.",
+    mistakes: ["Mixing it up with a breaker (a breaker needs a sweep).", "Trading it against the daily trend."],
+    related: ["breaker-block", "order-block", "bos"], strategies: [],
+  },
+  {
+    id: "liquidity", name: "Liquidity (BSL / SSL)", abbr: "BSL/SSL", pattern: "range", symbol: "FX:EURUSD",
+    short: "Clusters of stop orders above highs (buy-side) and below lows (sell-side).",
+    explanation: "Buy-side liquidity sits above old highs where shorts have their stops and breakout traders their buy orders. Sell-side liquidity sits below old lows. Price tends to move from one pool to the other. Knowing where the next pool is gives you a target and tells you where not to put your own stop.",
+    spot: ["Mark obvious swing highs and lows on the 1H and 4H.", "Mark the previous day's high and low and the session highs and lows.", "Equal highs and lows are extra obvious pools."],
+    bullish: "Price trades up toward old highs (BSL) as its target after rejecting a discount zone.",
+    bearish: "Price trades down toward old lows (SSL) as its target after rejecting a premium zone.",
+    mistakes: ["Placing your stop exactly at the obvious high or low.", "Treating every small swing as major liquidity."],
+    related: ["liquidity-sweep", "equal-highs-lows", "dealing-range"], strategies: ["judas-swing"],
+  },
+  {
+    id: "liquidity-sweep", name: "Liquidity Sweep", abbr: "Sweep", pattern: "sweep", symbol: "FX:GBPUSD",
+    short: "Price briefly trades past a high or low, takes the stops, and comes back inside.",
+    explanation: "A sweep is a quick run through a liquidity pool that doesn't continue. It shows the move was about filling orders, not about a real breakout. Many ICT setups start with a sweep followed by a shift in structure the other way.",
+    spot: ["Mark a clear high or low with resting stops.", "Watch price wick or close briefly beyond it.", "Look for a fast return back inside the range.", "Confirm with an MSS on a lower timeframe."],
+    bullish: "Price wicks below the Asian low at the London open, then closes back above it and rallies.",
+    bearish: "Price wicks above the previous day's high, then closes back below it and drops.",
+    mistakes: ["Entering on the sweep candle itself without confirmation.", "Calling a real breakout a sweep."],
+    related: ["liquidity", "mss", "judas-swing", "equal-highs-lows"], strategies: ["judas-swing", "silver-bullet"],
+  },
+  {
+    id: "equal-highs-lows", name: "Equal Highs / Lows", abbr: "EQH/EQL", pattern: "range", symbol: "CME_MINI:NQ1!",
+    short: "Two or more highs or lows at about the same price — an obvious pool of stops.",
+    explanation: "Equal highs or lows look like support or resistance to most traders, so stops gather right behind them. That makes them likely targets. They are better treated as a magnet than as a level that holds.",
+    spot: ["Find two or more swing points within a few ticks of each other.", "Mark the level and treat it as a target.", "Watch for a sweep when price reaches it."],
+    bullish: "Equal lows get swept, price reverses up toward the opposite side of the range.",
+    bearish: "Equal highs get swept, price reverses down.",
+    mistakes: ["Buying at equal lows expecting them to hold.", "Forgetting that the sweep often goes further than one tick."],
+    related: ["liquidity", "liquidity-sweep"], strategies: [],
+  },
+  {
+    id: "mss", name: "Market Structure Shift", abbr: "MSS", pattern: "structure", symbol: "FX:EURUSD",
+    short: "A break of the last short-term swing against the current move, with displacement.",
+    explanation: "After a sweep, the first strong break of a swing in the other direction suggests order flow has changed. The break should come with displacement, ideally leaving an FVG. That FVG or the order block behind it is then the entry area.",
+    spot: ["Wait for a sweep of a high or low.", "Find the last swing that led into the sweep.", "Look for a strong candle closing through that swing.", "Mark the FVG it leaves for entry."],
+    bullish: "Sweep of a low, then a strong close above the last lower high.",
+    bearish: "Sweep of a high, then a strong close below the last higher low.",
+    mistakes: ["Counting a wick through the swing as a shift.", "Using it without a prior sweep."],
+    related: ["bos", "choch", "displacement", "liquidity-sweep"], strategies: ["silver-bullet"],
+  },
+  {
+    id: "bos", name: "Break of Structure", abbr: "BOS", pattern: "structure", symbol: "CME_MINI:ES1!",
+    short: "Price closes past a previous swing in the same direction as the trend.",
+    explanation: "In an uptrend price makes higher highs; each new high that closes above the previous one is a break of structure. It confirms the trend is still going and gives a reference for where pullbacks might end.",
+    spot: ["Mark the most recent swing highs and lows.", "A close beyond the last swing in the trend direction is a BOS.", "Look for entries on the pullback afterwards."],
+    bullish: "Price closes above the previous higher high.",
+    bearish: "Price closes below the previous lower low.",
+    mistakes: ["Confusing a BOS with an MSS (BOS is with the trend).", "Using wicks instead of closes."],
+    related: ["mss", "choch", "order-block"], strategies: [],
+  },
+  {
+    id: "choch", name: "Change of Character", abbr: "CHoCH", pattern: "structure", symbol: "BITSTAMP:BTCUSD",
+    short: "The first break of structure against the trend — the earliest hint of a reversal.",
+    explanation: "A CHoCH is the first time price breaks a swing in the opposite direction of the trend. It is close to an MSS; many traders use the terms almost interchangeably. On its own it's a warning, not an entry.",
+    spot: ["Identify the trend from the swings.", "Mark the last swing that kept the trend intact.", "A close through that swing is the CHoCH."],
+    bullish: "In a downtrend, price closes above the last lower high for the first time.",
+    bearish: "In an uptrend, price closes below the last higher low for the first time.",
+    mistakes: ["Reversing your bias on a single lower-timeframe CHoCH.", "Ignoring the higher-timeframe context."],
+    related: ["mss", "bos"], strategies: [],
+  },
+  {
+    id: "premium-discount", name: "Premium / Discount", abbr: "P/D", pattern: "range", symbol: "FX:EURUSD",
+    short: "Above the 50% of a range is premium, below is discount.",
+    explanation: "Take a dealing range from swing low to swing high and split it at 50%, called equilibrium. Buying in discount and selling in premium keeps you from chasing price. It's a filter: an entry in the wrong half needs a very good reason.",
+    spot: ["Pick the current dealing range (swing low to swing high).", "Draw a Fibonacci from one end to the other.", "Below 0.5 is discount, above 0.5 is premium."],
+    bullish: "In a bullish range, wait for price to drop below 50% before looking for longs.",
+    bearish: "In a bearish range, wait for price to rise above 50% before looking for shorts.",
+    mistakes: ["Using a range that's too small or outdated.", "Selling in discount because 'it looks weak'."],
+    related: ["dealing-range", "ote"], strategies: ["ote"],
+  },
+  {
+    id: "ote", name: "Optimal Trade Entry", abbr: "OTE", pattern: "ote", symbol: "FX:GBPUSD",
+    short: "An entry zone between the 62% and 79% retracement of a move.",
+    explanation: "After a displacement leg, price often retraces deep into the move before continuing. The OTE zone is the 62–79% retracement, with 70.5% as the midpoint. It's most useful when an FVG or order block sits inside that zone.",
+    spot: ["Find a clear displacement leg.", "Draw the Fibonacci from the start to the end of the leg.", "Mark 0.62, 0.705 and 0.79.", "Look for a PD array (FVG, OB) inside the zone."],
+    bullish: "After a rally, price pulls back to 70% of the leg into an FVG and holds.",
+    bearish: "After a drop, price retraces 70% of the leg into an order block and rejects.",
+    mistakes: ["Drawing the fib on a leg without displacement.", "Entering at 62% with the stop too tight."],
+    related: ["premium-discount", "fvg", "order-block"], strategies: [],
+  },
+  {
+    id: "kill-zones", name: "Kill Zones", abbr: "KZ", pattern: "po3", symbol: "FX:EURUSD",
+    short: "Time windows where most of the day's big moves start — London and New York opens.",
+    explanation: "Volume and volatility aren't spread evenly over the day. The London kill zone (roughly 02:00–05:00 New York time) and the New York kill zone (07:00–10:00 NY time) are where setups tend to form. Outside them, price often drifts.",
+    spot: ["Set your chart to New York time.", "Shade 02:00–05:00 (London) and 07:00–10:00 (New York).", "Only look for entries inside those windows."],
+    bullish: "London sweeps the Asian low inside the kill zone, then the day's rally starts.",
+    bearish: "New York takes the London high in the first hour and reverses down.",
+    mistakes: ["Forgetting daylight saving time changes.", "Forcing trades because 'it's the kill zone'."],
+    related: ["power-of-3", "silver-bullet", "judas-swing"], strategies: ["silver-bullet"],
+  },
+  {
+    id: "power-of-3", name: "Power of 3", abbr: "PO3", pattern: "po3", symbol: "CME_MINI:NQ1!",
+    short: "Accumulation, manipulation, distribution: how a daily or session candle is often built.",
+    explanation: "Many daily candles open, move the wrong way first (manipulation), then make the real move (distribution). Asia often accumulates, London manipulates, New York distributes. It helps you not to chase the first move of the day.",
+    spot: ["Mark the daily or session open.", "Watch for a move against your bias right after the open.", "Look for a reversal back through the open — that's often the real move."],
+    bullish: "Price drops below the daily open, sweeps a low, then rallies to close near the high.",
+    bearish: "Price rallies above the daily open, sweeps a high, then sells off to close near the low.",
+    mistakes: ["Assuming every day follows the pattern.", "Ignoring news days."],
+    related: ["judas-swing", "kill-zones"], strategies: ["judas-swing"],
+  },
+  {
+    id: "silver-bullet", name: "Silver Bullet", abbr: "SB", pattern: "gap", symbol: "CME_MINI:NQ1!",
+    short: "A time-based setup: an FVG entry in a fixed one-hour window, often 10:00–11:00 NY time.",
+    explanation: "The silver bullet looks for a liquidity grab followed by an FVG inside a specific hour (03:00–04:00, 10:00–11:00 or 14:00–15:00 NY time). The target is the next nearby liquidity pool. It's a simple, repeatable model, which makes it easy to journal.",
+    spot: ["Wait for the time window to open.", "Mark nearby highs and lows.", "Look for a sweep and an FVG forming in the window.", "Enter at the FVG, target the opposite pool."],
+    bullish: "At 10:05 price takes a short-term low, displaces up and leaves an FVG; entry on the retrace.",
+    bearish: "At 10:10 price takes a short-term high, displaces down and leaves an FVG; entry on the retrace.",
+    mistakes: ["Taking setups outside the window.", "Targets that are too far for a one-hour setup."],
+    related: ["fvg", "kill-zones", "liquidity-sweep"], strategies: [],
+  },
+  {
+    id: "judas-swing", name: "Judas Swing", abbr: "Judas", pattern: "sweep", symbol: "FX:GBPUSD",
+    short: "A false move at the start of a session that runs stops before the real direction shows.",
+    explanation: "Shortly after the London or New York open, price often makes a fast move one way, takes the obvious stops, and turns. That first move is the Judas swing. It's the manipulation leg of the Power of 3.",
+    spot: ["Know your bias for the day.", "At the session open, watch for a move against that bias.", "Wait for it to take a clear high or low.", "Enter after the shift back in your direction."],
+    bullish: "Bullish bias; London opens with a drop below the Asian low, then reverses up.",
+    bearish: "Bearish bias; New York opens with a pop above the London high, then sells.",
+    mistakes: ["Trading the Judas move itself as a breakout.", "No clear bias, so every move looks like a Judas."],
+    related: ["power-of-3", "liquidity-sweep", "kill-zones"], strategies: [],
+  },
+  {
+    id: "ifvg", name: "Inversion Fair Value Gap", abbr: "IFVG", pattern: "gap", symbol: "CME_MINI:ES1!",
+    short: "An FVG that price closed through, which then acts from the other side.",
+    explanation: "When price breaks fully through an FVG with a close, the gap failed. That failed gap often becomes support or resistance in the opposite direction. IFVGs show up a lot right after a sweep and structure shift.",
+    spot: ["Mark an FVG.", "Wait for a candle body to close fully through it.", "Treat the gap as flipped; look for a retest from the other side."],
+    bullish: "A bearish FVG is closed through upward; the retest from above holds as support.",
+    bearish: "A bullish FVG is closed through downward; the retest from below rejects as resistance.",
+    mistakes: ["Calling a wick through the gap an inversion.", "Using it without a reason for the reversal."],
+    related: ["fvg", "breaker-block", "mss"], strategies: [],
+  },
+  {
+    id: "bpr", name: "Balanced Price Range", abbr: "BPR", pattern: "gap", symbol: "FX:EURUSD",
+    short: "The overlap of a bullish and a bearish FVG — price moved both ways through the same area.",
+    explanation: "If price displaces down leaving an FVG and later displaces up through the same area leaving an opposite FVG, the overlapping part is a balanced price range. It's a tight zone that often gives a clean reaction.",
+    spot: ["Find a bearish FVG and a later bullish FVG at the same price.", "Mark only the part where they overlap.", "Use it as a precise entry area."],
+    bullish: "Down move FVG, then up move FVG through it; the overlap holds on the retest.",
+    bearish: "Up move FVG, then down move FVG through it; the overlap rejects on the retest.",
+    mistakes: ["Marking the full gaps instead of only the overlap."],
+    related: ["fvg", "ifvg"], strategies: [],
+  },
+  {
+    id: "rejection-block", name: "Rejection Block", abbr: "RB", pattern: "sweep", symbol: "BITSTAMP:BTCUSD",
+    short: "The long wicks at a swing high or low, used as a zone for the next reaction.",
+    explanation: "When a high or low forms with long wicks, the area between the candle bodies and the wick extremes shows strong rejection. When price returns there, the bodies are where you look for the reaction, with the stop beyond the wicks.",
+    spot: ["Find a swing high or low with long wicks.", "Mark from the highest (or lowest) body to the wick extreme.", "Wait for price to return to the body level."],
+    bullish: "Long lower wicks at a low; price comes back to the bodies and holds.",
+    bearish: "Long upper wicks at a high; price comes back to the bodies and rejects.",
+    mistakes: ["Putting the stop inside the wick zone."],
+    related: ["order-block", "liquidity-sweep"], strategies: [],
+  },
+  {
+    id: "dealing-range", name: "Dealing Range", abbr: "DR", pattern: "range", symbol: "FX:EURUSD",
+    short: "The current swing high to swing low that price is trading inside.",
+    explanation: "Price spends most of its time between a clear swing high and swing low. That range sets premium and discount, shows where liquidity sits on both ends, and tells you whether you're buying low or high relative to recent movement.",
+    spot: ["On your bias timeframe, mark the latest swing high and low that contain current price.", "Update the range when one side is broken with displacement."],
+    bullish: "Price rejects the lower half of the range and runs to the high.",
+    bearish: "Price rejects the upper half and runs to the low.",
+    mistakes: ["Keeping an old range after it was broken.", "Using ranges from different timeframes at once."],
+    related: ["premium-discount", "liquidity"], strategies: [],
+  },
+  {
+    id: "displacement", name: "Displacement", abbr: "Disp.", pattern: "gap", symbol: "CME_MINI:NQ1!",
+    short: "A fast, strong move with large candle bodies, usually leaving FVGs behind.",
+    explanation: "Displacement shows that one side is clearly in control. It's what makes an MSS or order block valid. A slow, overlapping move toward a level isn't displacement, and setups built on it tend to fail.",
+    spot: ["Look for two or more large-bodied candles in a row.", "Check for little overlap between them.", "Look for an FVG in the move."],
+    bullish: "Three large green candles in a row breaking a swing high, leaving an FVG.",
+    bearish: "Three large red candles breaking a swing low, leaving an FVG.",
+    mistakes: ["Calling any single big candle displacement during news."],
+    related: ["fvg", "mss", "order-block"], strategies: [],
+  },
+  {
+    id: "htf-bias", name: "HTF Bias", abbr: "Bias", pattern: "structure", symbol: "FX:EURUSD",
+    short: "Your expected direction from the daily and 4H chart, and the liquidity price is likely to reach next.",
+    explanation: "Before looking at entries, decide which way you expect price to go and where it's likely heading. That comes from higher-timeframe structure and the nearest untouched liquidity. Lower-timeframe setups are then only taken in that direction.",
+    spot: ["On the daily, check if price is making higher highs or lower lows.", "Mark the nearest untouched liquidity above and below.", "Pick the side price is more likely to reach first."],
+    bullish: "Daily breaking highs, old highs above still untouched: look for longs only.",
+    bearish: "Daily breaking lows, equal lows below still untouched: look for shorts only.",
+    mistakes: ["Changing bias every hour.", "Forcing a bias on a choppy day instead of sitting out."],
+    related: ["dealing-range", "liquidity", "bos"], strategies: [],
+  },
+];
+
+export const CONCEPT_MAP = Object.fromEntries(ICT_CONCEPTS.map((c) => [c.id, c])) as Record<string, IctConcept>;
+export const getConcept = (id: string) => CONCEPT_MAP[id];
+
+/** Maps tag keys stored on trades to concept ids. */
+export const TAG_TO_CONCEPT: Record<string, string> = {
+  liquidity_sweep: "liquidity-sweep", fvg: "fvg", ifvg: "ifvg", bos: "bos", mss: "mss",
+  order_block: "order-block", displacement: "displacement", equal_highs_lows: "equal-highs-lows",
+  premium_discount: "premium-discount", killzones: "kill-zones", htf_bias: "htf-bias",
+};
