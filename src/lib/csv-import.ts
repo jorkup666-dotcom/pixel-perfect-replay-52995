@@ -32,8 +32,8 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
-export function detectMapping(headers: string[]): { mapping: Partial<Record<Field, number>>; confident: boolean } {
-  const mapping: Partial<Record<Field, number>> = {};
+export function detectMapping(headers: string[]): { mapping: Partial<Record<Field, number | undefined>>; confident: boolean } {
+  const mapping: Partial<Record<Field, number | undefined>> = {};
   headers.forEach((h, i) => {
     const t = h.trim();
     for (const f of Object.keys(SYNONYMS) as Field[]) if (mapping[f] == null && SYNONYMS[f].test(t)) { mapping[f] = i; break; }
@@ -52,7 +52,7 @@ const sideOf = (s: string) => (/short|sell/i.test(s) ? "short" : "long") as "lon
 const isExit = (s: string) => /exit|close/i.test(s);
 const dateOf = (s: string) => { const d = new Date(s.replace(" ", "T")); return isNaN(+d) ? null : d; };
 
-export function toTrades(rows: string[][], m: Partial<Record<Field, number>>): ImportedTrade[] {
+export function toTrades(rows: string[][], m: Partial<Record<Field, number | undefined>>): ImportedTrade[] {
   const g = (r: string[], f: Field) => (m[f] == null ? undefined : r[m[f]!]?.trim());
   let pairs: { open: string[]; close?: string[] }[];
   if (m.tradeNo != null) {

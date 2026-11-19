@@ -12,7 +12,7 @@ import type { Trade } from "@/lib/trades";
 export function ImportDialog({ open, onOpenChange, existing }: { open: boolean; onOpenChange: (o: boolean) => void; existing: Trade[] }) {
   const qc = useQueryClient();
   const [rows, setRows] = useState<string[][] | null>(null);
-  const [mapping, setMapping] = useState<Partial<Record<Field, number>>>({});
+  const [mapping, setMapping] = useState<Partial<Record<Field, number | undefined>>>({});
   const [showMap, setShowMap] = useState(false);
   const [risk, setRisk] = useState("100");
   const [busy, setBusy] = useState(false);

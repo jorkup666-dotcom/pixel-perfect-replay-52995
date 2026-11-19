@@ -13,7 +13,7 @@ describe("csv import", () => {
   it("pairs strategy-tester entry/exit rows by trade number", () => {
     const rows = parseCsv("Trade #,Type,Signal,Date/Time,Price USD,Contracts,Profit USD\n1,Exit short,x,2026-03-02 11:00,4990,1,500\n1,Entry short,x,2026-03-02 10:00,5000,1,500\n");
     const { mapping } = detectMapping(rows[0]!);
-    const t = toTrades(rows.slice(1), { ...mapping, symbol: undefined });
+    const t = toTrades(rows.slice(1), (({ symbol: _s, ...rest }) => rest)(mapping));
     expect(t).toHaveLength(1);
     expect(t[0]).toMatchObject({ direction: "short", entry: 5000, exit_price: 4990, pnl: 500 });
   });
