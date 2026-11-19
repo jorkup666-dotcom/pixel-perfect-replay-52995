@@ -21,7 +21,7 @@ const empty = (): TradeFormValues => ({
 
 const fromTrade = (t: Trade): TradeFormValues => ({
   trade_date: t.trade_date, instrument: t.instrument, session: t.session,
-  direction: t.direction as "long" | "short", entry: String(t.entry), stop_loss: String(t.stop_loss),
+  direction: t.direction as "long" | "short", entry: String(t.entry), stop_loss: t.stop_loss == null ? "" : String(t.stop_loss),
   take_profit: t.take_profit == null ? "" : String(t.take_profit),
   exit_price: t.exit_price == null ? "" : String(t.exit_price), result_r: String(t.result_r),
   setup_type: t.setup_type, timeframe: t.timeframe, notes: t.notes ?? "", ict_concepts: t.ict_concepts ?? [],

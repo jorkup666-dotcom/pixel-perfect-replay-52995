@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
+import { Watchlist } from "@/components/watchlist/Watchlist";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
@@ -33,7 +34,7 @@ function ChartPage() {
     el.appendChild(s);
   }, [symbol, interval, theme]);
 
-  const set = (k: "symbol" | "interval", v: string) => navigate({ search: (p) => ({ ...p, [k]: v }) });
+  const set = (k: "symbol" | "interval", v: string) => navigate({ search: { symbol, interval, [k]: v } });
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -47,7 +48,10 @@ function ChartPage() {
           <SelectContent>{INTERVALS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <div ref={ref} className="tradingview-widget-container min-h-0 flex-1 overflow-hidden rounded-sm border" />
+      <div className="flex min-h-0 flex-1 gap-3">
+        <div ref={ref} className="tradingview-widget-container min-h-0 flex-1 overflow-hidden rounded-sm border" />
+        <Watchlist active={symbol} onSelect={(tv) => set("symbol", tv)} />
+      </div>
     </div>
   );
 }

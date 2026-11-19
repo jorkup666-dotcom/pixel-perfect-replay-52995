@@ -17,19 +17,24 @@ export type Database = {
       trades: {
         Row: {
           checklist: Json
+          closed_at: string | null
           created_at: string
           direction: string
           entry: number
           exit_price: number | null
+          external_id: string | null
           ict_concepts: string[]
           id: string
           instrument: string
           notes: string | null
+          pnl: number | null
+          quantity: number | null
           result_r: number
           screenshot_path: string | null
           session: string
           setup_type: string
-          stop_loss: number
+          source: string
+          stop_loss: number | null
           take_profit: number | null
           timeframe: string
           trade_date: string
@@ -38,19 +43,24 @@ export type Database = {
         }
         Insert: {
           checklist?: Json
+          closed_at?: string | null
           created_at?: string
           direction: string
           entry: number
           exit_price?: number | null
+          external_id?: string | null
           ict_concepts?: string[]
           id?: string
           instrument: string
           notes?: string | null
+          pnl?: number | null
+          quantity?: number | null
           result_r: number
           screenshot_path?: string | null
           session: string
           setup_type: string
-          stop_loss: number
+          source?: string
+          stop_loss?: number | null
           take_profit?: number | null
           timeframe: string
           trade_date: string
@@ -59,24 +69,47 @@ export type Database = {
         }
         Update: {
           checklist?: Json
+          closed_at?: string | null
           created_at?: string
           direction?: string
           entry?: number
           exit_price?: number | null
+          external_id?: string | null
           ict_concepts?: string[]
           id?: string
           instrument?: string
           notes?: string | null
+          pnl?: number | null
+          quantity?: number | null
           result_r?: number
           screenshot_path?: string | null
           session?: string
           setup_type?: string
-          stop_loss?: number
+          source?: string
+          stop_loss?: number | null
           take_profit?: number | null
           timeframe?: string
           trade_date?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          updated_at: string
+          user_id: string
+          watchlist: Json | null
+        }
+        Insert: {
+          updated_at?: string
+          user_id?: string
+          watchlist?: Json | null
+        }
+        Update: {
+          updated_at?: string
+          user_id?: string
+          watchlist?: Json | null
         }
         Relationships: []
       }

@@ -2,12 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Download, Image, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Upload, Download, Image, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState, PageHeader, Panel, RValue } from "@/components/app/ui";
 import { TradeFormDialog } from "@/components/app/TradeFormDialog";
+import { ImportDialog } from "@/components/app/ImportDialog";
+import { ConceptLink } from "@/components/concepts/ConceptLink";
+import { TAG_TO_CONCEPT } from "@/data/ictConcepts";
+import { computeStats } from "@/lib/trade-stats";
+import { fmtR } from "@/lib/trades";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadCsv, signedScreenshotUrl, tradesQuery, type Trade } from "@/lib/trades";
 
@@ -20,6 +25,7 @@ function Journal() {
   const qc = useQueryClient();
   const { data: trades = [], isLoading } = useQuery(tradesQuery);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Trade | null>(null);
   const [q, setQ] = useState(""); const [inst, setInst] = useState("all"); const [setup, setSetup] = useState("all");
   const [from, setFrom] = useState(""); const [to, setTo] = useState("");
@@ -41,6 +47,7 @@ function Journal() {
   return (
     <>
       <PageHeader title="Trade Journal" subtitle={`${filtered.length} of ${trades.length} trades`} actions={<>
+        <Button variant="outline" onClick={() => setImportOpen(true)}><Upload /> Import trades</Button>
         <Button variant="outline" disabled={!filtered.length} onClick={() => downloadCsv(filtered)}><Download /> Export CSV</Button>
         <Button variant="hero" onClick={() => { setEditing(null); setOpen(true); }}><Plus /> Add trade</Button></>} />
       <Panel className="mb-4"><div className="grid gap-3 md:grid-cols-5">
@@ -50,17 +57,30 @@ function Journal() {
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
       </div></Panel>
+      {filtered.length > 0 && (() => {
+        const st = computeStats(filtered);
+        const pnl = filtered.reduce((a, t) => a + Number(t.pnl ?? 0), 0);
+        return (
+          <div className="mb-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
+            {[["Win rate", st.winRate == null ? "—" : `${st.winRate}%`], ["Total P/L", pnl ? pnl.toFixed(2) : "—"], ["Average R", fmtR(st.avgR)], ["Best", fmtR(st.bestR)], ["Worst", fmtR(st.worstR)]].map(([k, v]) => (
+              <div key={k} className="surface px-4 py-3"><div className="text-xs text-muted-foreground">{k}</div><div className="num mt-1 font-semibold">{v}</div></div>
+            ))}
+          </div>
+        );
+      })()}
       <Panel>
         {!isLoading && filtered.length === 0 ? (
           <EmptyState icon={BookOpen} title={trades.length ? "No matching trades" : "Your journal is empty"} body={trades.length ? "Adjust the filters to see more trades." : "Log your first trade to start building your record."} />
         ) : (
           <div className="overflow-x-auto"><table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-muted-foreground"><tr>{["Date", "Instrument", "Session", "Dir", "Setup", "TF", "Entry", "SL", "Result", ""].map((h) => <th key={h} className="px-2 py-2 font-medium">{h}</th>)}</tr></thead>
+            <thead className="text-left text-xs uppercase text-muted-foreground"><tr>{["Date", "Instrument", "Session", "Dir", "Setup", "TF", "Entry", "SL", "Result", "ICT", "Notes", ""].map((h) => <th key={h} className="px-2 py-2 font-medium">{h}</th>)}</tr></thead>
             <tbody className="divide-y">{filtered.map((t) => (
               <tr key={t.id} className="hover:bg-muted/40">
                 <td className="num px-2 py-2.5">{t.trade_date}</td><td className="px-2 font-medium">{t.instrument}</td><td className="px-2">{t.session}</td>
                 <td className={t.direction === "long" ? "px-2 text-success" : "px-2 text-loss"}>{t.direction}</td><td className="px-2">{t.setup_type}</td><td className="px-2">{t.timeframe}</td>
-                <td className="num px-2">{t.entry}</td><td className="num px-2">{t.stop_loss}</td><td className="px-2"><RValue r={t.result_r} /></td>
+                <td className="num px-2">{t.entry}</td><td className="num px-2">{t.stop_loss ?? "—"}</td><td className="px-2"><RValue r={t.result_r} /></td>
+                <td className="px-2 text-xs">{(t.ict_concepts ?? []).map((k) => TAG_TO_CONCEPT[k] ? <span key={k} className="mr-2"><ConceptLink id={TAG_TO_CONCEPT[k]!} /></span> : null)}</td>
+                <td className="max-w-48 truncate px-2 text-xs text-muted-foreground" title={t.notes ?? ""}>{t.notes}</td>
                 <td className="whitespace-nowrap px-2 text-right">
                   {t.screenshot_path && <Button size="icon" variant="ghost" aria-label="Screenshot" onClick={() => openShot(t.screenshot_path!)}><Image /></Button>}
                   <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditing(t); setOpen(true); }}><Pencil /></Button>
@@ -68,6 +88,7 @@ function Journal() {
                 </td></tr>))}</tbody></table></div>
         )}
       </Panel>
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} existing={trades} />
       <TradeFormDialog open={open} onOpenChange={setOpen} trade={editing} />
     </>
   );
