@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "./Logo";
-import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -49,7 +48,7 @@ function AppSidebar() {
               {NAV.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={path === item.url} tooltip={item.title}
-                    className="h-10 data-[active=true]:bg-sidebar-accent data-[active=true]:text-foreground data-[active=true]:font-medium">
+                    className="h-10 data-[active=true]:bg-sidebar-accent data-[active=true]:text-cyan">
                     <Link to={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -80,13 +79,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background px-4">
+        <div className="flex min-w-0 flex-1 flex-col bg-glow bg-no-repeat">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger />
             <span className="text-xs text-muted-foreground">
               Educational trading journal · not financial advice
             </span>
-            <div className="ml-auto"><ThemeToggle /></div>
           </header>
           <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-8">{children}</main>
         </div>

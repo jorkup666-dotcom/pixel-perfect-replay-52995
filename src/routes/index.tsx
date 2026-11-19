@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { BarChart3, BookOpen, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/app/Logo";
-import { ConceptLink } from "@/components/concepts/ConceptLink";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "TradeKit – ICT Trading Journal" },
-      { name: "description", content: "A plain trading journal for ICT traders: log trades in R, review setups, look up concepts." },
+      { name: "description", content: "Journal your trades, measure results in R and study ICT concepts with TradeKit." },
       { property: "og:title", content: "TradeKit – ICT Trading Journal" },
-      { property: "og:description", content: "Log trades in R, review your ICT setups and look up concepts." },
+      { property: "og:description", content: "An educational ICT trading journal with analytics, checklist and glossary." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -17,40 +17,44 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const ROWS = [
-  ["Journal", "Date, instrument, session, entry, stop, target, exit, result in R, screenshot, notes."],
-  ["Statistics", "Win rate, profit factor, average R, equity curve and monthly totals — only from trades you logged."],
-  ["Concepts", "Every ICT term in the app opens a short explanation with chart examples."],
-  ["Chart", "A TradingView chart inside the app, so you can check the setup while you write it down."],
+const FEATURES = [
+  { icon: BookOpen, title: "Structured journal", body: "Log entries, stops, targets, R results, screenshots and notes." },
+  { icon: BarChart3, title: "Automatic statistics", body: "Win rate, profit factor, equity curve and monthly results from your own data." },
+  { icon: ListChecks, title: "ICT framework", body: "Tag concepts, follow a pre-trade checklist and review what works for you." },
 ];
 
 function Landing() {
   return (
-    <div className="min-h-screen">
-      <header className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
+    <div className="min-h-screen bg-glow bg-no-repeat">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
-        <Button asChild variant="ghost" size="sm"><Link to="/auth">Sign in</Link></Button>
+        <Button asChild variant="ghost"><Link to="/auth">Sign in</Link></Button>
       </header>
-      <main className="mx-auto max-w-4xl px-6 pb-20 pt-12">
-        <h1 className="max-w-2xl text-3xl font-semibold leading-snug">A trading journal for people who trade ICT concepts.</h1>
-        <p className="mt-4 max-w-2xl text-muted-foreground">
-          Write down every trade, measure it in R, and see after a few weeks which setups actually pay.
-          Did your <ConceptLink id="fvg" /> entries after a <ConceptLink id="liquidity-sweep" /> work better
-          in London or New York? The numbers will tell you.
+      <section className="mx-auto max-w-4xl px-6 pb-16 pt-16 text-center md:pt-28">
+        <p className="mb-5 inline-block rounded-full border px-3 py-1 text-xs text-cyan">ICT trading journal</p>
+        <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+          Review every trade.<br /><span className="text-gradient">Refine your edge.</span>
+        </h1>
+        <p className="mx-auto mt-6 max-w-xl text-muted-foreground">
+          TradeKit helps you record trades, measure results in R and understand which ICT concepts actually work in your trading.
         </p>
-        <div className="mt-8 flex gap-3">
-          <Button asChild><Link to="/auth">Create an account</Link></Button>
-          <Button asChild variant="outline"><Link to="/dashboard">Open dashboard</Link></Button>
+        <div className="mt-10 flex justify-center gap-3">
+          <Button asChild variant="hero" size="lg"><Link to="/auth">Start journaling</Link></Button>
+          <Button asChild variant="outline" size="lg"><Link to="/dashboard">Open dashboard</Link></Button>
         </div>
-        <table className="mt-16 w-full border-t text-sm">
-          <tbody className="divide-y">
-            {ROWS.map(([k, v]) => (
-              <tr key={k}><td className="w-40 py-3 pr-4 align-top font-medium">{k}</td><td className="py-3 text-muted-foreground">{v}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="mt-16 text-xs text-muted-foreground">TradeKit is an educational journal. It gives no signals and no financial advice.</p>
-      </main>
+      </section>
+      <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-20 md:grid-cols-3">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="surface p-6">
+            <f.icon className="h-5 w-5 text-cyan" />
+            <h3 className="mt-4 font-semibold">{f.title}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{f.body}</p>
+          </div>
+        ))}
+      </section>
+      <footer className="border-t py-6 text-center text-xs text-muted-foreground">
+        TradeKit is an educational journal. It does not provide signals or financial advice.
+      </footer>
     </div>
   );
 }

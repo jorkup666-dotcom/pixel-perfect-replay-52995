@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTheme } from "@/components/app/ThemeToggle";
+
 
 const SYMBOLS = [
   ["FX:EURUSD", "EURUSD"], ["FX:GBPUSD", "GBPUSD"], ["CME_MINI:NQ1!", "NQ"], ["CME_MINI:ES1!", "ES"], ["BITSTAMP:BTCUSD", "BTCUSD"],
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/chart")({
 function ChartPage() {
   const { symbol = "FX:EURUSD", interval = "15" } = Route.useSearch();
   const navigate = useNavigate({ from: "/chart" });
-  const theme = useTheme();
+  const theme = "dark";
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

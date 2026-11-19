@@ -30,7 +30,7 @@ export function ConceptDrawer({ id, onClose, onOpen }: { id: string | null; onCl
                   const rc = getConcept(r); if (!rc) return null;
                   return <button key={r} onClick={() => onOpen(r)} className="rounded-sm border px-2 py-1 text-xs hover:bg-accent">{rc.name}</button>;
                 })}</div></section>
-              <Link to="/chart" search={{ symbol: c.symbol }} onClick={onClose} className="inline-block text-sm text-primary underline underline-offset-4">
+              <Link to="/chart" search={{ symbol: c.symbol, interval: undefined }} onClick={onClose} className="inline-block text-sm text-primary underline underline-offset-4">
                 Open on chart ({c.symbol})
               </Link>
             </div>
