@@ -25,9 +25,11 @@ export const readTradeScreenshot = createServerFn({ method: "POST" })
         ] }],
         text: { format: { type: "json_schema", name: "trade", strict: true, schema: EXTRACT_JSON_SCHEMA } },
       });
-      const text = (res.output ?? [])
-        .flatMap((o) => ("content" in o && Array.isArray(o.content) ? o.content : []))
-        .map((c) => ("text" in c && typeof c.text === "string" ? c.text : ""))
+      const items = (res.output ?? []) as unknown as { type?: string; content?: { type?: string; text?: string }[] }[];
+      const text = items
+        .filter((o) => o.type === "message")
+        .flatMap((o) => o.content ?? [])
+        .map((c) => (c.type === "output_text" && typeof c.text === "string" ? c.text : ""))
         .join("");
       const parsed = extractedTradeSchema.safeParse(JSON.parse(text || "{}"));
       if (!parsed.success) return { ok: false, error: "unreadable" };
