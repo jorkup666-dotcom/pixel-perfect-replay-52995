@@ -27,3 +27,14 @@ describe("csv import", () => {
     expect(rFromPnl(-100, 100)).toBe(-1);
   });
 });
+
+describe("csv import – TradingView paper trading", () => {
+  it("skips cancelled orders and reads headers with units", () => {
+    const rows = parseCsv("Symbol,Side,Type,Qty,Fill Price,Status,Placing Time,Profit (USD)\nFX:EURUSD,Sell,Market,1000,1.0850,Filled,2026-04-01 08:00:00,12.5\nFX:EURUSD,Buy,Limit,1000,,Cancelled,2026-04-01 09:00:00,\n");
+    const { mapping, confident } = detectMapping(rows[0]!);
+    expect(confident).toBe(true);
+    const t = toTrades(rows.slice(1), mapping);
+    expect(t).toHaveLength(1);
+    expect(t[0]).toMatchObject({ instrument: "EURUSD", direction: "short", pnl: 12.5 });
+  });
+});

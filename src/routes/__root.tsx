@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ConceptProvider } from "@/components/concepts/ConceptProvider";
+import { applyAccent, readPrefs } from "@/lib/prefs";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -127,6 +128,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => { applyAccent(readPrefs().accent); }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {

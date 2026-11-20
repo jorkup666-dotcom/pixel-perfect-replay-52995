@@ -1,101 +1,106 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { UploadCloud } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { FIELDS, detectMapping, parseCsv, rFromPnl, toTrades, type Field } from "@/lib/csv-import";
+import { riskAmount, usePrefs } from "@/lib/prefs";
 import type { Trade } from "@/lib/trades";
+import { cn } from "@/lib/utils";
 
 export function ImportDialog({ open, onOpenChange, existing }: { open: boolean; onOpenChange: (o: boolean) => void; existing: Trade[] }) {
   const qc = useQueryClient();
+  const prefs = usePrefs();
   const [rows, setRows] = useState<string[][] | null>(null);
+  const [fileName, setFileName] = useState("");
   const [mapping, setMapping] = useState<Partial<Record<Field, number | undefined>>>({});
-  const [showMap, setShowMap] = useState(false);
-  const [risk, setRisk] = useState("100");
+  const [needsMap, setNeedsMap] = useState(false);
+  const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const headers = rows?.[0] ?? [];
   const trades = useMemo(() => (rows ? toTrades(rows.slice(1), mapping) : []), [rows, mapping]);
   const known = new Set(existing.map((t) => t.external_id).filter(Boolean));
   const fresh = trades.filter((t, i) => !known.has(t.external_id) && trades.findIndex((x) => x.external_id === t.external_id) === i);
+  const risk = riskAmount(prefs);
 
   async function onFile(f: File) {
     const r = parseCsv(await f.text());
-    if (r.length < 2) { toast.error("This file has no rows"); return; }
+    if (r.length < 2) { toast.error("Dit bestand bevat geen trades"); return; }
     const d = detectMapping(r[0]!);
-    setRows(r); setMapping(d.mapping); setShowMap(!d.confident);
+    setFileName(f.name); setRows(r); setMapping(d.mapping); setNeedsMap(!d.confident);
   }
 
+  function reset() { setRows(null); setFileName(""); setNeedsMap(false); }
+
   async function save() {
-    const riskN = Number(risk);
-    if (!(riskN > 0)) { toast.error("Enter your risk per trade to calculate R"); return; }
     setBusy(true);
     const payload = fresh.map((t) => ({
       ...t, source: "tradingview", session: "Other", setup_type: "Imported", timeframe: "—",
-      stop_loss: null, result_r: rFromPnl(t.pnl, riskN),
+      stop_loss: null, result_r: rFromPnl(t.pnl, risk),
     }));
     const { error } = await supabase.from("trades").upsert(payload, { onConflict: "user_id,external_id", ignoreDuplicates: true });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(`${payload.length} trades imported, ${trades.length - payload.length} duplicates skipped`);
+    toast.success(`${payload.length} trades geïmporteerd`);
     qc.invalidateQueries({ queryKey: ["trades"] });
-    setRows(null); onOpenChange(false);
+    reset(); onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) setRows(null); onOpenChange(o); }}>
-      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import trades from TradingView</DialogTitle>
-          <DialogDescription>Upload a CSV exported from TradingView (trade history, paper trading or strategy tester list of trades).</DialogDescription>
+          <DialogTitle>Importeer trades uit TradingView</DialogTitle>
+          <DialogDescription asChild>
+            <ol className="list-decimal space-y-1 pl-5 text-sm">
+              <li>Open in TradingView het <b>Trading Panel</b> onderaan (bijv. Paper Trading).</li>
+              <li>Ga naar het tabblad <b>History</b> (of <b>List of trades</b> in de Strategy Tester).</li>
+              <li>Klik op het menu (⋯) → <b>Export data</b> en sleep het CSV-bestand hieronder.</li>
+            </ol>
+          </DialogDescription>
         </DialogHeader>
-        <Input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-        {rows && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{showMap ? "We couldn't match every column. Check the mapping:" : "Columns detected automatically."}</span>
-              <button className="text-xs text-cyan hover:underline" onClick={() => setShowMap(!showMap)}>{showMap ? "Hide mapping" : "Edit mapping"}</button>
-            </div>
-            {showMap && (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                {FIELDS.map((f) => (
-                  <div key={f.key} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">{f.label}{f.required && " *"}</Label>
-                    <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={mapping[f.key] ?? ""}
-                      onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value === "" ? undefined : Number(e.target.value) }))}>
-                      <option value="">— none —</option>
-                      {headers.map((h, i) => <option key={i} value={i}>{h}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-end gap-3">
-              <div className="space-y-1"><Label htmlFor="risk" className="text-xs text-muted-foreground">Risk per trade (to calculate R)</Label>
-                <Input id="risk" className="w-32" inputMode="decimal" value={risk} onChange={(e) => setRisk(e.target.value)} /></div>
-              <p className="pb-2 text-xs text-muted-foreground">{trades.length} trades found · {fresh.length} new · {trades.length - fresh.length} duplicates</p>
-            </div>
-            <div className="max-h-64 overflow-auto rounded-md border">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-card text-left text-muted-foreground"><tr>{["Date", "Symbol", "Dir", "Entry", "Exit", "Qty", "P/L", "R", ""].map((h) => <th key={h} className="px-2 py-1.5">{h}</th>)}</tr></thead>
-                <tbody className="divide-y">{trades.slice(0, 200).map((t, i) => {
-                  const dup = !fresh.includes(t);
-                  return (<tr key={i} className={dup ? "opacity-40" : ""}>
-                    <td className="num px-2 py-1">{t.trade_date}</td><td className="px-2">{t.instrument}</td><td className="px-2">{t.direction}</td>
-                    <td className="num px-2">{t.entry}</td><td className="num px-2">{t.exit_price ?? "—"}</td><td className="num px-2">{t.quantity ?? "—"}</td>
-                    <td className={`num px-2 ${(t.pnl ?? 0) >= 0 ? "text-success" : "text-loss"}`}>{t.pnl ?? "—"}</td>
-                    <td className="num px-2">{rFromPnl(t.pnl, Number(risk))}</td><td className="px-2">{dup ? "duplicate" : ""}</td></tr>);
-                })}</tbody>
-              </table>
+
+        <label
+          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
+          className={cn("flex min-h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors",
+            drag ? "border-primary bg-primary/10" : "border-border hover:border-primary/60")}>
+          <UploadCloud className="h-10 w-10 text-cyan" />
+          <span className="font-medium">{fileName || "Sleep je TradingView-bestand hierheen"}</span>
+          <span className="text-xs text-muted-foreground">{rows ? `${trades.length} trades gevonden · ${fresh.length} nieuw · ${trades.length - fresh.length} duplicaten` : "of klik om een CSV-bestand te kiezen"}</span>
+          <input type="file" accept=".csv,text/csv" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        </label>
+
+        {rows && needsMap && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Een paar kolommen konden we niet herkennen. Kies ze hieronder:</p>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              {FIELDS.filter((f) => f.required).map((f) => (
+                <div key={f.key} className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">{f.label}</Label>
+                  <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={mapping[f.key] ?? ""}
+                    onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value === "" ? undefined : Number(e.target.value) }))}>
+                    <option value="">— kies —</option>
+                    {(rows[0] ?? []).map((h, i) => <option key={i} value={i}>{h}</option>)}
+                  </select>
+                </div>
+              ))}
             </div>
           </div>
         )}
+
+        {rows && fresh.length > 0 && (
+          <p className="text-xs text-muted-foreground">R wordt berekend met je risico per trade uit Settings ({prefs.currency} {risk.toFixed(2)}).</p>
+        )}
+
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button variant="hero" disabled={!fresh.length || busy} onClick={save}>{busy ? "Importing…" : `Import ${fresh.length} trades`}</Button>
+          <Button variant="hero" size="lg" className="w-full" disabled={!fresh.length || busy} onClick={save}>
+            {busy ? "Bezig…" : "Importeer"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -12,6 +12,7 @@ import { ImportDialog } from "@/components/app/ImportDialog";
 import { ConceptLink } from "@/components/concepts/ConceptLink";
 import { TAG_TO_CONCEPT } from "@/data/ictConcepts";
 import { computeStats } from "@/lib/trade-stats";
+import { formatDate, usePrefs } from "@/lib/prefs";
 import { fmtR } from "@/lib/trades";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadCsv, signedScreenshotUrl, tradesQuery, type Trade } from "@/lib/trades";
@@ -23,6 +24,10 @@ export const Route = createFileRoute("/_authenticated/journal")({
 
 function Journal() {
   const qc = useQueryClient();
+  const prefs = usePrefs();
+  const showResult = (t: Trade) => prefs.pnlDisplay === "r" || t.pnl == null
+    ? <RValue r={t.result_r} />
+    : <span className={Number(t.pnl) >= 0 ? "num text-success" : "num text-loss"}>{prefs.pnlDisplay === "amount" ? `${prefs.currency} ${Number(t.pnl).toFixed(2)}` : `${((Number(t.pnl) / prefs.accountSize) * 100).toFixed(2)}%`}</span>;
   const { data: trades = [], isLoading } = useQuery(tradesQuery);
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -47,7 +52,7 @@ function Journal() {
   return (
     <>
       <PageHeader title="Trade Journal" subtitle={`${filtered.length} of ${trades.length} trades`} actions={<>
-        <Button variant="outline" onClick={() => setImportOpen(true)}><Upload /> Import trades</Button>
+        <Button variant="hero" size="lg" onClick={() => setImportOpen(true)}><Upload /> Importeer trades</Button>
         <Button variant="outline" disabled={!filtered.length} onClick={() => downloadCsv(filtered)}><Download /> Export CSV</Button>
         <Button variant="hero" onClick={() => { setEditing(null); setOpen(true); }}><Plus /> Add trade</Button></>} />
       <Panel className="mb-4"><div className="grid gap-3 md:grid-cols-5">
@@ -76,9 +81,9 @@ function Journal() {
             <thead className="text-left text-xs uppercase text-muted-foreground"><tr>{["Date", "Instrument", "Session", "Dir", "Setup", "TF", "Entry", "SL", "Result", "ICT", "Notes", ""].map((h) => <th key={h} className="px-2 py-2 font-medium">{h}</th>)}</tr></thead>
             <tbody className="divide-y">{filtered.map((t) => (
               <tr key={t.id} className="hover:bg-muted/40">
-                <td className="num px-2 py-2.5">{t.trade_date}</td><td className="px-2 font-medium">{t.instrument}</td><td className="px-2">{t.session}</td>
+                <td className="num px-2 py-2.5">{formatDate(t.trade_date, prefs)}</td><td className="px-2 font-medium">{t.instrument}</td><td className="px-2">{t.session}</td>
                 <td className={t.direction === "long" ? "px-2 text-success" : "px-2 text-loss"}>{t.direction}</td><td className="px-2">{t.setup_type}</td><td className="px-2">{t.timeframe}</td>
-                <td className="num px-2">{t.entry}</td><td className="num px-2">{t.stop_loss ?? "—"}</td><td className="px-2"><RValue r={t.result_r} /></td>
+                <td className="num px-2">{t.entry}</td><td className="num px-2">{t.stop_loss ?? "—"}</td><td className="px-2">{showResult(t)}</td>
                 <td className="px-2 text-xs">{(t.ict_concepts ?? []).map((k) => TAG_TO_CONCEPT[k] ? <span key={k} className="mr-2"><ConceptLink id={TAG_TO_CONCEPT[k]!} /></span> : null)}</td>
                 <td className="max-w-48 truncate px-2 text-xs text-muted-foreground" title={t.notes ?? ""}>{t.notes}</td>
                 <td className="whitespace-nowrap px-2 text-right">

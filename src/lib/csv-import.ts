@@ -1,21 +1,22 @@
-export type Field = "symbol" | "side" | "entry" | "exit" | "qty" | "time" | "closeTime" | "pnl" | "tradeNo";
+export type Field = "symbol" | "side" | "entry" | "exit" | "qty" | "time" | "closeTime" | "pnl" | "tradeNo" | "status";
 export const FIELDS: { key: Field; label: string; required?: boolean }[] = [
   { key: "symbol", label: "Symbol", required: true }, { key: "side", label: "Direction / Side", required: true },
   { key: "entry", label: "Entry price", required: true }, { key: "exit", label: "Exit price" },
   { key: "qty", label: "Size / Qty" }, { key: "time", label: "Time (open)", required: true },
-  { key: "closeTime", label: "Close time" }, { key: "pnl", label: "Profit / Loss" }, { key: "tradeNo", label: "Trade #" },
+  { key: "closeTime", label: "Close time" }, { key: "pnl", label: "Profit / Loss" }, { key: "tradeNo", label: "Trade #" }, { key: "status", label: "Status" },
 ];
 
 const SYNONYMS: Record<Field, RegExp> = {
   symbol: /^(symbol|ticker|instrument|market)$/i,
   side: /^(side|type|direction|action)$/i,
-  entry: /^(entry( price)?|avg (fill|entry) price|fill price|open price|price( usd)?|price)$/i,
+  entry: /^(entry( price)?|avg\.? (fill|entry|open) price|fill price|open price|price( usd| usdt)?|price|avg price)$/i,
   exit: /^(exit( price)?|close price|avg exit price)$/i,
   qty: /^(qty|quantity|size|contracts|amount)$/i,
-  time: /^(date\/time|time|date|placing time|open time|entry time|fill time)$/i,
+  time: /^(date\/time|date and time|time|date|placing time|open time|entry time|fill time|opened|created)$/i,
   closeTime: /^(closing time|close time|exit time)$/i,
-  pnl: /^(profit( usd)?|p&l|pnl|realized p&l|net profit|profit\/loss|realized pnl)$/i,
+  pnl: /^(profit( usd| usdt)?|p&l|pnl|realized p&l|realised p&l|net p&l|net profit|profit\/loss|realized pnl|net p&l usd)$/i,
   tradeNo: /^(trade #|trade|trade no|trade number)$/i,
+  status: /^(status|order status)$/i,
 };
 
 export function parseCsv(text: string): string[][] {
@@ -36,7 +37,8 @@ export function detectMapping(headers: string[]): { mapping: Partial<Record<Fiel
   const mapping: Partial<Record<Field, number | undefined>> = {};
   headers.forEach((h, i) => {
     const t = h.trim();
-    for (const f of Object.keys(SYNONYMS) as Field[]) if (mapping[f] == null && SYNONYMS[f].test(t)) { mapping[f] = i; break; }
+    const clean = t.replace(/\s*\(.*\)$/, "").replace(/\s+/g, " ");
+    for (const f of Object.keys(SYNONYMS) as Field[]) if (mapping[f] == null && SYNONYMS[f].test(clean)) { mapping[f] = i; break; }
   });
   const confident = FIELDS.filter((f) => f.required).every((f) => mapping[f.key] != null);
   return { mapping, confident };
@@ -60,7 +62,7 @@ export function toTrades(rows: string[][], m: Partial<Record<Field, number | und
     const byNo = new Map<string, { open?: string[]; close?: string[] }>();
     for (const r of rows) { const k = g(r, "tradeNo") ?? ""; const e = byNo.get(k) ?? {}; if (isExit(g(r, "side") ?? "")) e.close = r; else e.open = r; byNo.set(k, e); }
     pairs = [...byNo.values()].filter((p) => p.open).map((p) => ({ open: p.open!, ...(p.close ? { close: p.close } : {}) }));
-  } else pairs = rows.map((r) => ({ open: r }));
+  } else pairs = rows.filter((r) => !/cancel|reject|working|pending/i.test(g(r, "status") ?? "")).map((r) => ({ open: r }));
   const out: ImportedTrade[] = [];
   for (const { open, close } of pairs) {
     const symbol = g(open, "symbol") ?? (m.symbol == null ? "UNKNOWN" : undefined);
